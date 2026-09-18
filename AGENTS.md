@@ -11,6 +11,9 @@ Read `README.md`, `SECURITY.md`, `PROVENANCE.md`,
   requires it.
 - Never commit credentials, real mail, mailbox addresses, production
   domains/IPs, private paths, database dumps, or service secrets.
+- Preserve copyright/licence notices in directly adapted third-party files and
+  update `THIRD_PARTY_NOTICES.md` / `PROVENANCE.md` when reuse changes.
+- Do not copy code from a repository whose licence is absent or unclear.
 - Inspect `git status` before editing and preserve unrelated work.
 
 ## Invariants

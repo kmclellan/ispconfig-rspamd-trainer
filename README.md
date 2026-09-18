@@ -76,17 +76,45 @@ deduplication markers.
 It must not contain message bodies, subjects, sender/recipient addresses,
 mailbox passwords, client IPs, or copied ham. See `docs/PRIVACY.md`.
 
-## Existing options reviewed
+## Reused open-source components and prior art
 
-- Rspamd WebUI/controller: keep and reuse for engine internals.
-- `jnorell/train-spam-scanner` (BSD-2-Clause): useful prior art for
-  ISPConfig/Dovecot training, but not used as this project's architecture.
-- `darix/dovecot-sieve-antispam-rspamd`: useful conceptual reference; source
-  is not copied because repository licensing was unclear during review.
-- `ispconfig-theme-customizer` (MIT): useful example of an additive ISPConfig
-  module/installer with no core patches.
+This project deliberately reuses small, well-isolated pieces where that is
+safer than reinventing them:
 
-See `docs/EXISTING-PROJECTS.md` and `PROVENANCE.md`.
+- The MIT-licensed ISPConfig admin module assignment/unassignment helpers from
+  `ispconfig-theme-customizer` are adapted in `bin/`. They automatically
+  add `rspamd_trainer` to administrator module lists and clean it up safely on
+  uninstall, including stale `startmodule` values.
+- `jnorell/train-spam-scanner` (BSD-2-Clause) is used as design/API prior art
+  for Rspamd controller password files, controller endpoint/classifier
+  selection, per-user delivery context, and immediate IMAPSieve feedback.
+  Those parts are independently implemented in Python/current Dovecot 2.4
+  configuration; its Bash trainer/cron/bindfs architecture is not copied.
+- Rspamd's own WebUI/controller remains the engine UI/API rather than being
+  reimplemented here.
+- `darix/dovecot-sieve-antispam-rspamd` remains conceptual reference only;
+  source is not copied because its repository licence was unclear during
+  review.
+
+See `THIRD_PARTY_NOTICES.md`, `docs/EXISTING-PROJECTS.md`, and
+`PROVENANCE.md`.
+
+## Immediate IMAP feedback
+
+Current Dovecot 2.4 templates are included for:
+
+- move into Junk -> learn spam;
+- move out of Junk -> learn ham;
+- move from Junk to Trash/Deleted/Junk/Spam -> **do not** learn ham.
+
+The Sieve scripts pipe each message transiently to
+`ispconfig-rspamd-feedback`. The message is supplied on stdin and is not
+retained by the project. Controller endpoint/password-file/classifier settings
+live in the protected `rspamd.ini`, not in Sieve or shell scripts.
+
+These files are present and tested as source, but activation remains disabled
+until the Debian 13 target's Dovecot 2.4 configuration is validated.
+
 
 ## Development
 

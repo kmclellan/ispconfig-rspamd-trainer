@@ -1,0 +1,13 @@
+[rspamd]
+# Current rspamc uses -h for either controller host:port or a Unix socket.
+endpoint = /run/rspamd/worker-controller.socket
+
+# rspamc supports controller password-file handling. Keep the actual secret out
+# of argv, environment variables, the ISPConfig UI, and this repository.
+password_file = /etc/ispconfig-rspamd-trainer/controller.password
+
+# Optional classifier name. Leave empty for Rspamd's default Bayes classifier.
+classifier =
+
+binary = /usr/bin/rspamc
+timeout = 60

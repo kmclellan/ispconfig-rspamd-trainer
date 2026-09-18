@@ -1,9 +1,29 @@
-import os
 import tempfile
 import unittest
 from pathlib import Path
 
-from ispconfig_rspamd_trainer.rspamd import RspamdClient, RspamdLearningError
+from ispconfig_rspamd_trainer.rspamd import (
+    RspamdClient,
+    RspamdConnection,
+    RspamdLearningError,
+)
+
+
+class Result:
+    def __init__(self, returncode=0, stdout=b"", stderr=b""):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+class Recorder:
+    def __init__(self, result=None):
+        self.result = result or Result(stdout=b"success")
+        self.calls = []
+
+    def __call__(self, argv, **kwargs):
+        self.calls.append((argv, kwargs))
+        return self.result
 
 
 class RspamdClientTests(unittest.TestCase):
@@ -33,6 +53,50 @@ class RspamdClientTests(unittest.TestCase):
             with self.assertRaises(RspamdLearningError) as caught:
                 client.learn_ham(secret)
             self.assertNotIn("private-message-body", str(caught.exception))
+
+    def test_controller_model_builds_fixed_rspamc_arguments(self):
+        recorder = Recorder()
+        connection = RspamdConnection(
+            endpoint="/run/rspamd/worker-controller.socket",
+            password_file="/etc/ispconfig-rspamd-trainer/controller.password",
+            classifier="bayes_user",
+        )
+        client = RspamdClient(
+            binary="/usr/bin/rspamc",
+            connection=connection,
+            runner=recorder,
+        )
+        client.learn_spam(b"spam", deliver_to="user@example.test")
+        argv, kwargs = recorder.calls[0]
+        self.assertEqual(
+            [
+                "/usr/bin/rspamc",
+                "-h",
+                "/run/rspamd/worker-controller.socket",
+                "-P",
+                "/etc/ispconfig-rspamd-trainer/controller.password",
+                "-c",
+                "bayes_user",
+                "-d",
+                "user@example.test",
+                "learn_spam",
+            ],
+            argv,
+        )
+        self.assertEqual(b"spam", kwargs["input"])
+
+    def test_relative_password_file_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RspamdConnection(password_file="secret.txt").validate()
+
+    def test_option_shaped_endpoint_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RspamdConnection(endpoint="--exec=id").validate()
+
+    def test_newline_in_delivery_identity_is_rejected(self):
+        client = RspamdClient(runner=Recorder())
+        with self.assertRaises(ValueError):
+            client.learn_ham(b"ham", deliver_to="user@example.test\nPassword: bad")
 
 
 if __name__ == "__main__":

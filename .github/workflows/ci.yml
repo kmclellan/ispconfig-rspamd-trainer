@@ -27,4 +27,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: sh -n install.sh uninstall.sh
       - name: PHP and ISPConfig language syntax
-        run: find ispconfig \( -name '*.php' -o -name '*.lng' \) -print0 | xargs -0 -n1 php -l
+        run: find ispconfig bin \( -name '*.php' -o -name '*.lng' \) -print0 | xargs -0 -n1 php -l
+      - name: Install Dovecot Sieve compiler
+        run: sudo apt-get update && sudo apt-get install -y dovecot-sieve
+      - name: Sieve syntax
+        run: |
+          mkdir -p /tmp/ispcrt-sieve
+          for script in dovecot/sieve/*.sieve; do
+            sievec -P sieve_imapsieve -P sieve_extprograms \
+              -x '+vnd.dovecot.pipe +vnd.dovecot.environment' \
+              "$script" "/tmp/ispcrt-sieve/$(basename "$script").svbin"
+          done

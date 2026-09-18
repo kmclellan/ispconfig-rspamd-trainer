@@ -12,7 +12,31 @@ Current Dovecot 2.4 supports:
 
 This keeps Dovecot indexes/mailbox semantics authoritative.
 
-## Intended production flows
+## Immediate IMAPSieve feedback
+
+The repository now contains a current Dovecot 2.4 implementation of a workflow
+also proven by `jnorell/train-spam-scanner`:
+
+- `dovecot/2.4/99-ispconfig-rspamd-trainer.conf.example`;
+- `dovecot/sieve/ispconfig-rspamd-report-spam.sieve`;
+- `dovecot/sieve/ispconfig-rspamd-report-ham.sieve`;
+- `dovecot/sieve-pipe/ispconfig-rspamd-learn-spam`;
+- `dovecot/sieve-pipe/ispconfig-rspamd-learn-ham`.
+
+Moving a message into Junk sends it transiently to
+`ispconfig-rspamd-feedback spam <user>`. Moving a message out of Junk sends
+ham feedback, except when the destination is a Trash/Deleted/Junk/Spam folder.
+That prevents ordinary deletion of spam from becoming a false ham signal.
+
+The wrappers do not contain Rspamd passwords. The Python feedback command
+loads the controller endpoint/password-file/classifier from the protected
+`rspamd.ini` configuration and supplies the message to `rspamc` on stdin.
+
+The Dovecot configuration is deliberately an example until the Debian 13
+target is available for integration validation. The installer must verify the
+actual special-use Junk mailbox name and Dovecot version before activation.
+
+## Intended periodic/bulk flows
 
 ### Aged Inbox ham
 
@@ -40,12 +64,13 @@ This keeps Dovecot indexes/mailbox semantics authoritative.
 5. On failure, retain it for retry.
 
 No web/API field may accept an arbitrary search query. The trainer constructs
-the query from validated mailbox identity, fixed mailbox roles and bounded
+the query from validated mailbox identity, fixed mailbox roles, and bounded
 numeric settings.
 
 The direct-Maildir queue code remains useful for isolated unit testing and as a
 possible explicitly tested fallback, but Dovecot-backed operations are the
 preferred production architecture.
 
-Exact Dovecot 2.4.5 formatter/output behavior must still be integration-tested
-on the Debian 13 target before enabling message mutation.
+Exact Dovecot 2.4 formatter/output behavior and IMAPSieve activation must still
+be integration-tested on the Debian 13 target before enabling message
+mutation.
