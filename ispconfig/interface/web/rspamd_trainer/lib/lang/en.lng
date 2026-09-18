@@ -1,0 +1,5 @@
+<?php
+$wb['Rspamd Training'] = 'Rspamd Training';
+$wb['Overview'] = 'Overview';
+$wb['Administrator access required.'] = 'Administrator access required.';
+?>

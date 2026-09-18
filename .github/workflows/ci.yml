@@ -26,5 +26,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh -n install.sh uninstall.sh
-      - name: PHP syntax
-        run: find ispconfig -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: PHP and ISPConfig language syntax
+        run: find ispconfig \( -name '*.php' -o -name '*.lng' \) -print0 | xargs -0 -n1 php -l

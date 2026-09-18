@@ -1,5 +1,7 @@
 # ISPConfig Rspamd Trainer
 
+[![CI](https://github.com/kmclellan/ispconfig-rspamd-trainer/actions/workflows/ci.yml/badge.svg)](https://github.com/kmclellan/ispconfig-rspamd-trainer/actions/workflows/ci.yml)
+
 `ispconfig-rspamd-trainer` is a privacy-aware automatic Rspamd training
 service for ISPConfig mail servers. It combines a constrained local trainer, a
 small ISPConfig administration module, Dovecot/IMAPSieve feedback, and
