@@ -7,9 +7,11 @@ Wants=mariadb.service
 Type=oneshot
 User=root
 Group=ispconfig-rspamd-trainer
+ExecStartPre=/usr/bin/install -d -o ispconfig-rspamd-trainer -g ispconfig-rspamd-trainer -m 0750 /var/lib/ispconfig-rspamd-trainer
 ExecStart=/usr/bin/php /usr/local/libexec/ispconfig-rspamd-trainer/export_mailboxes.php /var/lib/ispconfig-rspamd-trainer/mailboxes.json
-StateDirectory=ispconfig-rspamd-trainer
-StateDirectoryMode=0750
+# The state directory is owned by the unprivileged trainer service.
+# This root helper writes only the inventory snapshot into that existing
+# directory; it must not take ownership of the directory itself.
 UMask=0027
 NoNewPrivileges=yes
 PrivateTmp=yes

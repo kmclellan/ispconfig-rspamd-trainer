@@ -45,6 +45,21 @@ The broker reconciles stable ISPConfig mailbox IDs against that snapshot.
 Renames update the existing inventory record; missing IDs become inactive
 rather than having their policy silently transferred to another mailbox.
 
+## Protocol observation
+
+When both IMAP and POP3 are enabled in ISPConfig, Safe Auto needs evidence of
+actual protocol use. Dovecot post-login scripts send only
+`{protocol, authenticated-user}` to a dedicated local observer socket.
+
+This is intentionally **not** the management broker socket. The observer
+accepts no commands other than recording `imap` or `pop3` for an already
+known mailbox. It adds the current server timestamp itself; callers cannot
+supply historical timestamps.
+
+The post-login wrapper then always executes the real Dovecot session command.
+Observation failure is ignored so this feature can never become an
+availability dependency for user mail access.
+
 ## Training execution
 
 Runs are serialized with a non-blocking local file lock.

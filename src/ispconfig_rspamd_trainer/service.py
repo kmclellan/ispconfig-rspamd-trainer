@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from .inventory import SpamSource, access_mode_summary
 from .orchestrator import RunInProgress
-from .policy import MailboxPolicy
+from .policy import MailboxPolicy, aged_inbox_allowed
 from .protocol import validate_request
 
 
@@ -16,22 +18,45 @@ class TrainerService:
         rspamd=None,
         coordinator=None,
         dependency_errors=None,
+        observer_socket_path=None,
     ):
         self.state = state
         self.inventory_source = inventory_source
         self.rspamd = rspamd
         self.coordinator = coordinator
         self.dependency_errors = dict(dependency_errors or {})
+        self.observer_socket_path = observer_socket_path
 
     def _require(self, value, name):
         if value is None:
             raise DependencyUnavailable("{} is not configured".format(name))
         return value
 
+    def _observer_available(self):
+        if not self.observer_socket_path:
+            return False
+        return Path(self.observer_socket_path).exists()
+
     def _inventory_payload(self):
         records = self.state.list_inventory(present=True)
-        return {
-            "mailboxes": [
+        spam_sources = {
+            source.mailbox_id: source
+            for source in self.state.list_spam_sources(enabled_only=True)
+        }
+        mailboxes = []
+        for item in records:
+            configured_policy = self.state.get_policy(item.mailbox_id)
+            policy = configured_policy or MailboxPolicy(item.mailbox_id)
+            observation = self.state.get_observation(item.mailbox_id)
+            if observation.last_imap and observation.last_pop3:
+                observed_access = "mixed"
+            elif observation.last_pop3:
+                observed_access = "pop3"
+            elif observation.last_imap:
+                observed_access = "imap"
+            else:
+                observed_access = "unknown"
+            mailboxes.append(
                 {
                     "mailbox_id": item.mailbox_id,
                     "email": item.email,
@@ -41,9 +66,35 @@ class TrainerService:
                     "active": item.active,
                     "doveadm_enabled": item.doveadm_enabled,
                     "access_mode": item.access_mode,
+                    "observed_access": observed_access,
+                    "observed_since": (
+                        None
+                        if observation.observed_since is None
+                        else observation.observed_since.isoformat()
+                    ),
+                    "last_imap": (
+                        None
+                        if observation.last_imap is None
+                        else observation.last_imap.isoformat()
+                    ),
+                    "last_pop3": (
+                        None
+                        if observation.last_pop3 is None
+                        else observation.last_pop3.isoformat()
+                    ),
+                    "policy": policy.__dict__,
+                    "policy_is_default": configured_policy is None,
+                    "aged_inbox_eligible": aged_inbox_allowed(
+                        policy,
+                        observation,
+                        imap_enabled=item.imap_enabled,
+                        pop3_enabled=item.pop3_enabled,
+                    ),
+                    "dedicated_spam_source": item.mailbox_id in spam_sources,
                 }
-                for item in records
-            ],
+            )
+        return {
+            "mailboxes": mailboxes,
             "access_modes": access_mode_summary(records),
         }
 
@@ -90,6 +141,7 @@ class TrainerService:
                 "inventory_source": inventory_available,
                 "rspamd": self.rspamd is not None,
                 "coordinator": self.coordinator is not None,
+                "observer": self._observer_available(),
                 "dependency_errors": dict(self.dependency_errors),
             }
 
@@ -107,6 +159,7 @@ class TrainerService:
                     "inventory_source": self.inventory_source is not None,
                     "rspamd": self.rspamd is not None,
                     "coordinator": self.coordinator is not None,
+                    "observer": self._observer_available(),
                 },
                 "dependency_errors": dict(self.dependency_errors),
             }

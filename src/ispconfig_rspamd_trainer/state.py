@@ -249,17 +249,7 @@ class StateStore:
             for row in rows
         ]
 
-    def get_inventory(self, mailbox_id):
-        with self.connect() as con:
-            row = con.execute(
-                """
-                SELECT mailbox_id,email,server_id,imap_enabled,pop3_enabled,
-                       active,doveadm_enabled
-                FROM mailbox_inventory
-                WHERE mailbox_id=? AND present=1
-                """,
-                (mailbox_id,),
-            ).fetchone()
+    def _inventory_row_to_record(self, row):
         if row is None:
             return None
         return MailboxRecord(
@@ -271,6 +261,34 @@ class StateStore:
             active=bool(row["active"]),
             doveadm_enabled=bool(row["doveadm_enabled"]),
         )
+
+    def get_inventory(self, mailbox_id):
+        with self.connect() as con:
+            row = con.execute(
+                """
+                SELECT mailbox_id,email,server_id,imap_enabled,pop3_enabled,
+                       active,doveadm_enabled
+                FROM mailbox_inventory
+                WHERE mailbox_id=? AND present=1
+                """,
+                (mailbox_id,),
+            ).fetchone()
+        return self._inventory_row_to_record(row)
+
+    def get_inventory_by_email(self, email):
+        if not isinstance(email, str) or not email or len(email) > 320:
+            raise ValueError("invalid mailbox email")
+        with self.connect() as con:
+            row = con.execute(
+                """
+                SELECT mailbox_id,email,server_id,imap_enabled,pop3_enabled,
+                       active,doveadm_enabled
+                FROM mailbox_inventory
+                WHERE email = ? COLLATE NOCASE AND present=1
+                """,
+                (email,),
+            ).fetchone()
+        return self._inventory_row_to_record(row)
 
     def set_spam_source(self, source):
         source.validate()

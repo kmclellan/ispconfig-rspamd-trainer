@@ -1,13 +1,13 @@
 [Unit]
-Description=ISPConfig Rspamd Trainer broker
-Requires=ispconfig-rspamd-trainer-broker.socket
+Description=ISPConfig Rspamd Trainer protocol observer
+Requires=ispconfig-rspamd-trainer-observer.socket
 After=local-fs.target
 
 [Service]
 Type=simple
 User=ispconfig-rspamd-trainer
 Group=ispconfig-rspamd-trainer
-ExecStart=/usr/local/bin/ispconfig-rspamd-trainer-broker
+ExecStart=/usr/local/bin/ispconfig-rspamd-trainer-observer
 StateDirectory=ispconfig-rspamd-trainer
 StateDirectoryMode=0750
 NoNewPrivileges=yes

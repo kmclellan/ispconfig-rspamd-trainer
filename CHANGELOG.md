@@ -21,3 +21,5 @@
 - Added Dovecot-backed serialized run orchestration with move/expunge only after successful learning and GUID/UID duplicate suppression for aged-Inbox ham.
 - Added privacy-safe ISPConfig mailbox inventory/reconciliation and dedicated spam-source state.
 - Added narrow root-only ISPConfig mailbox snapshot exporter plus hardened 15-minute discovery timer design, keeping ISPConfig database credentials out of the trainer.
+- Added separate low-privilege IMAP/POP3 observation socket and fail-open Dovecot post-login wrappers that record only mailbox identity, protocol and timestamp.
+- Enriched mailbox inventory status with observed protocol usage, effective policy, aged-Inbox eligibility and dedicated-spam-source state.

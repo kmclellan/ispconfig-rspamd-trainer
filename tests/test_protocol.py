@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from ispconfig_rspamd_trainer.inventory import MailboxRecord
@@ -102,6 +103,24 @@ class ProtocolTests(unittest.TestCase):
         real = service.handle({"op": "run", "args": {}})
         self.assertEqual(2, real["attempted"])
         self.assertEqual(1, real["learned_spam"])
+
+    def test_inventory_payload_exposes_observation_and_eligibility(self):
+        service = TrainerService(
+            self.store,
+            inventory_source=FakeInventorySource(),
+        )
+        service.handle({"op": "discovery", "args": {}})
+        self.store.record_protocol(
+            1,
+            "imap",
+            datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        payload = service.handle({"op": "inventory_list", "args": {}})
+        by_id = {row["mailbox_id"]: row for row in payload["mailboxes"]}
+        self.assertEqual("imap", by_id[1]["observed_access"])
+        self.assertTrue(by_id[1]["aged_inbox_eligible"])
+        self.assertEqual("unknown", by_id[2]["observed_access"])
+        self.assertFalse(by_id[2]["aged_inbox_eligible"])
 
     def test_spam_source_must_reference_known_mailbox(self):
         with self.assertRaises(ValueError):

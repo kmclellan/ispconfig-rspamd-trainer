@@ -1,0 +1,7 @@
+#!/bin/sh
+# Record only protocol + authenticated username. Never block mail access if the
+# observation service is unavailable.
+if [ -n "${USER:-}" ]; then
+  /usr/local/bin/ispconfig-rspamd-observe pop3 "$USER" >/dev/null 2>&1 || true
+fi
+exec "$@"

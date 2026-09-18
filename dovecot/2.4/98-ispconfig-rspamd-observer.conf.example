@@ -1,0 +1,31 @@
+# Dovecot 2.4 post-login protocol observation.
+#
+# Official Dovecot post-login scripting passes authenticated USER to the
+# script. These scripts record only mailbox identity + protocol + current
+# timestamp through a dedicated low-privilege observer socket.
+#
+# IMPORTANT: installer must inspect existing service imap/pop3 executable
+# customisations first. If an existing post-login chain is present, append the
+# observer script to that chain rather than overwriting it.
+
+service imap {
+  executable = imap ispconfig-rspamd-imap-postlogin
+}
+
+service ispconfig-rspamd-imap-postlogin {
+  executable = script-login /usr/local/libexec/ispconfig-rspamd-trainer/ispconfig-rspamd-observe-imap
+  user = $SET:default_internal_user
+  unix_listener ispconfig-rspamd-imap-postlogin {
+  }
+}
+
+service pop3 {
+  executable = pop3 ispconfig-rspamd-pop3-postlogin
+}
+
+service ispconfig-rspamd-pop3-postlogin {
+  executable = script-login /usr/local/libexec/ispconfig-rspamd-trainer/ispconfig-rspamd-observe-pop3
+  user = $SET:default_internal_user
+  unix_listener ispconfig-rspamd-pop3-postlogin {
+  }
+}

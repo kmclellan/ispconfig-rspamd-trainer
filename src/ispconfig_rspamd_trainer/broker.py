@@ -15,6 +15,7 @@ DEFAULT_STATE = "/var/lib/ispconfig-rspamd-trainer/state.db"
 DEFAULT_SNAPSHOT = "/var/lib/ispconfig-rspamd-trainer/mailboxes.json"
 DEFAULT_RSPAMD_CONFIG = "/etc/ispconfig-rspamd-trainer/rspamd.ini"
 DEFAULT_DOVEADM = "/usr/bin/doveadm"
+DEFAULT_OBSERVER_SOCKET = "/run/ispconfig-rspamd-trainer/observe.sock"
 MAX_REQUEST = 65536
 
 
@@ -41,6 +42,7 @@ def build_service(
     snapshot_path=DEFAULT_SNAPSHOT,
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
+    observer_socket_path=DEFAULT_OBSERVER_SOCKET,
 ):
     store = StateStore(state_path)
     store.initialize()
@@ -76,6 +78,7 @@ def build_service(
         rspamd=rspamd,
         coordinator=coordinator,
         dependency_errors=dependency_errors,
+        observer_socket_path=observer_socket_path,
     )
 
 
@@ -85,12 +88,14 @@ def serve(
     snapshot_path=DEFAULT_SNAPSHOT,
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
+    observer_socket_path=DEFAULT_OBSERVER_SOCKET,
 ):
     service = build_service(
         state_path=state_path,
         snapshot_path=snapshot_path,
         rspamd_config=rspamd_config,
         doveadm_binary=doveadm_binary,
+        observer_socket_path=observer_socket_path,
     )
     sock = listener(socket_path)
     while True:
@@ -121,6 +126,9 @@ def main():
         snapshot_path=os.environ.get("ISPCRT_SNAPSHOT", DEFAULT_SNAPSHOT),
         rspamd_config=os.environ.get("ISPCRT_RSPAMD_CONFIG", DEFAULT_RSPAMD_CONFIG),
         doveadm_binary=os.environ.get("ISPCRT_DOVEADM", DEFAULT_DOVEADM),
+        observer_socket_path=os.environ.get(
+            "ISPCRT_OBSERVER_SOCKET", DEFAULT_OBSERVER_SOCKET
+        ),
     )
 
 

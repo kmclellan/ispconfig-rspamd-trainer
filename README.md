@@ -29,7 +29,17 @@ conservative per-mailbox automation.
 
 Initial safe defaults are a 30-day Inbox age threshold and a 90-day POP3
 look-back window. Any newly observed POP3 activity suspends automatic
-aged-Inbox learning.
+aged-Inbox learning. If ISPConfig explicitly disables POP3 for a mailbox, that
+capability setting is treated as stronger evidence and Safe Auto does not need
+to wait merely to prove POP3 is absent.
+
+For mailboxes where both protocols are permitted, optional Dovecot post-login
+observers record only the authenticated mailbox identity, protocol
+(`imap`/`pop3`) and current timestamp. They do not record client IPs,
+session identifiers or message metadata. Observation uses a separate,
+write-only Unix socket; Dovecot is never given access to the management
+broker. If the observer is unavailable, the post-login wrapper fails open so
+mail access is not interrupted.
 
 Aged Inbox messages are learned in place and never copied or retained by this
 project.
