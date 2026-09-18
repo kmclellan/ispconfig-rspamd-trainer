@@ -1,10 +1,12 @@
 import json
 import os
 import socket
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from .dovecot import DoveadmClient
 from .feedback import load_client
+from .launcher import AsyncRunLauncher
 from .orchestrator import RunCoordinator
 from .service import TrainerService
 from .snapshot import SnapshotMailboxSource
@@ -16,7 +18,9 @@ DEFAULT_SNAPSHOT = "/var/lib/ispconfig-rspamd-trainer/mailboxes.json"
 DEFAULT_RSPAMD_CONFIG = "/etc/ispconfig-rspamd-trainer/rspamd.ini"
 DEFAULT_DOVEADM = "/usr/bin/doveadm"
 DEFAULT_OBSERVER_SOCKET = "/run/ispconfig-rspamd-trainer/observe.sock"
+DEFAULT_CLI = "/usr/local/bin/ispconfig-rspamd-trainer"
 MAX_REQUEST = 65536
+MAX_WORKERS = 8
 
 
 def listener(socket_path):
@@ -43,6 +47,8 @@ def build_service(
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
     observer_socket_path=DEFAULT_OBSERVER_SOCKET,
+    management_socket_path=DEFAULT_SOCKET,
+    cli_binary=DEFAULT_CLI,
 ):
     store = StateStore(state_path)
     store.initialize()
@@ -72,6 +78,11 @@ def build_service(
     if rspamd is not None and dovecot is not None:
         coordinator = RunCoordinator(store, dovecot, rspamd)
 
+    async_launcher = AsyncRunLauncher(
+        cli_binary=cli_binary,
+        socket_path=management_socket_path,
+    )
+
     return TrainerService(
         store,
         inventory_source=inventory_source,
@@ -79,7 +90,28 @@ def build_service(
         coordinator=coordinator,
         dependency_errors=dependency_errors,
         observer_socket_path=observer_socket_path,
+        async_launcher=async_launcher,
     )
+
+
+def handle_connection(conn, service):
+    with conn:
+        data = conn.recv(MAX_REQUEST + 1)
+        if len(data) > MAX_REQUEST:
+            response = {"ok": False, "error": "request_too_large"}
+        else:
+            try:
+                request = json.loads(data.decode("utf-8"))
+                response = {"ok": True, "result": service.handle(request)}
+            except Exception as exc:
+                # Keep the broker response privacy-safe: exception class +
+                # bounded message only, never tracebacks or request payloads.
+                response = {
+                    "ok": False,
+                    "error": type(exc).__name__,
+                    "message": str(exc)[:512],
+                }
+        conn.sendall((json.dumps(response, sort_keys=True) + "\n").encode("utf-8"))
 
 
 def serve(
@@ -89,6 +121,7 @@ def serve(
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
     observer_socket_path=DEFAULT_OBSERVER_SOCKET,
+    cli_binary=DEFAULT_CLI,
 ):
     service = build_service(
         state_path=state_path,
@@ -96,27 +129,17 @@ def serve(
         rspamd_config=rspamd_config,
         doveadm_binary=doveadm_binary,
         observer_socket_path=observer_socket_path,
+        management_socket_path=socket_path,
+        cli_binary=cli_binary,
     )
     sock = listener(socket_path)
-    while True:
-        conn, _ = sock.accept()
-        with conn:
-            data = conn.recv(MAX_REQUEST + 1)
-            if len(data) > MAX_REQUEST:
-                response = {"ok": False, "error": "request_too_large"}
-            else:
-                try:
-                    request = json.loads(data.decode("utf-8"))
-                    response = {"ok": True, "result": service.handle(request)}
-                except Exception as exc:
-                    # Keep the broker response privacy-safe: exception class +
-                    # bounded message only, never tracebacks or request payloads.
-                    response = {
-                        "ok": False,
-                        "error": type(exc).__name__,
-                        "message": str(exc)[:512],
-                    }
-            conn.sendall((json.dumps(response, sort_keys=True) + "\n").encode("utf-8"))
+    with ThreadPoolExecutor(
+        max_workers=MAX_WORKERS,
+        thread_name_prefix="ispconfig-rspamd-broker",
+    ) as executor:
+        while True:
+            conn, _ = sock.accept()
+            executor.submit(handle_connection, conn, service)
 
 
 def main():
@@ -129,6 +152,7 @@ def main():
         observer_socket_path=os.environ.get(
             "ISPCRT_OBSERVER_SOCKET", DEFAULT_OBSERVER_SOCKET
         ),
+        cli_binary=os.environ.get("ISPCRT_CLI", DEFAULT_CLI),
     )
 
 

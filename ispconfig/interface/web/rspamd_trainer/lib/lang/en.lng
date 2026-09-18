@@ -2,4 +2,64 @@
 $wb['Rspamd Training'] = 'Rspamd Training';
 $wb['Overview'] = 'Overview';
 $wb['Administrator access required.'] = 'Administrator access required.';
+
+$wb['page_title_txt'] = 'Rspamd Training';
+$wb['status_txt'] = 'Status';
+$wb['broker_txt'] = 'Local broker';
+$wb['inventory_txt'] = 'Mailbox inventory';
+$wb['rspamd_txt'] = 'Rspamd';
+$wb['observer_txt'] = 'Protocol observer';
+$wb['classifier_txt'] = 'Classifier statistics';
+$wb['latest_run_txt'] = 'Latest run';
+$wb['mailboxes_txt'] = 'Mailboxes';
+$wb['custom_policies_txt'] = 'Custom policies';
+$wb['spam_sources_txt'] = 'Dedicated spam sources';
+$wb['healthy_txt'] = 'Healthy';
+$wb['needs_attention_txt'] = 'Needs attention';
+$wb['available_txt'] = 'Available';
+$wb['unavailable_txt'] = 'Unavailable';
+$wb['never_txt'] = 'Never';
+$wb['yes_txt'] = 'Yes';
+$wb['no_txt'] = 'No';
+
+$wb['refresh_txt'] = 'Refresh';
+$wb['dry_run_txt'] = 'Dry run';
+$wb['run_now_txt'] = 'Run now';
+$wb['save_txt'] = 'Save';
+$wb['enable_txt'] = 'Enable';
+$wb['disable_txt'] = 'Disable';
+
+$wb['mailbox_policies_txt'] = 'Mailbox policies';
+$wb['mailbox_help_txt'] = 'Automatic is the recommended default. POP3/mixed mailboxes are protected from aged-Inbox ham learning until the configured evidence makes it safe.';
+$wb['mailbox_txt'] = 'Mailbox';
+$wb['access_txt'] = 'Allowed protocols';
+$wb['observed_txt'] = 'Observed use';
+$wb['mode_txt'] = 'Mode';
+$wb['age_txt'] = 'Inbox age (days)';
+$wb['batch_txt'] = 'Batch';
+$wb['eligible_txt'] = 'Aged Inbox eligible';
+$wb['spam_source_txt'] = 'Trusted spam source';
+$wb['default_policy_txt'] = 'Recommended default';
+$wb['no_mailboxes_txt'] = 'No mailbox inventory is available yet.';
+
+$wb['mode_auto_txt'] = 'Automatic (recommended)';
+$wb['mode_imap_txt'] = 'IMAP only — enable aged Inbox';
+$wb['mode_mixed_txt'] = 'POP3/mixed — never use Inbox';
+$wb['mode_off_txt'] = 'Off';
+
+$wb['privacy_txt'] = 'Privacy';
+$wb['privacy_summary_txt'] = 'Ham is learned in place and is not retained by this project.';
+$wb['privacy_detail_txt'] = 'Protocol observation stores only mailbox identity plus IMAP/POP3 timestamps. It does not store client IPs or message metadata. Dedicated spam-source retention is enabled only after administrator confirmation.';
+$wb['confirm_spam_txt'] = 'I confirm every non-Ham message in this mailbox is spam.';
+
+$wb['inventory_refreshed_txt'] = 'Mailbox inventory refreshed.';
+$wb['inventory_refresh_failed_txt'] = 'Mailbox inventory could not be refreshed; showing the last known local state.';
+$wb['dry_run_complete_txt'] = 'Dry run complete: %d spam and %d ham candidates.';
+$wb['run_complete_txt'] = 'Training run complete: %d spam learned, %d ham learned, %d failures.';
+$wb['run_started_txt'] = 'Training run started. Refresh this page to see the latest result.';
+$wb['policy_saved_txt'] = 'Mailbox policy saved.';
+$wb['spam_source_enabled_txt'] = 'Dedicated spam source enabled.';
+$wb['spam_source_disabled_txt'] = 'Dedicated spam source disabled.';
+$wb['spam_confirmation_required_txt'] = 'Confirm that every non-Ham message in this mailbox is spam before enabling it as a dedicated source.';
+$wb['post_required_txt'] = 'This action must be submitted as a POST request.';
 ?>

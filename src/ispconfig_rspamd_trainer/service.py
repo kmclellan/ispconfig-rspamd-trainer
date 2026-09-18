@@ -19,6 +19,7 @@ class TrainerService:
         coordinator=None,
         dependency_errors=None,
         observer_socket_path=None,
+        async_launcher=None,
     ):
         self.state = state
         self.inventory_source = inventory_source
@@ -26,6 +27,7 @@ class TrainerService:
         self.coordinator = coordinator
         self.dependency_errors = dict(dependency_errors or {})
         self.observer_socket_path = observer_socket_path
+        self.async_launcher = async_launcher
 
     def _require(self, value, name):
         if value is None:
@@ -36,6 +38,13 @@ class TrainerService:
         if not self.observer_socket_path:
             return False
         return Path(self.observer_socket_path).exists()
+
+    def _inventory_available(self):
+        if self.inventory_source is None:
+            return False
+        if hasattr(self.inventory_source, "available"):
+            return bool(self.inventory_source.available())
+        return True
 
     def _inventory_payload(self):
         records = self.state.list_inventory(present=True)
@@ -84,11 +93,14 @@ class TrainerService:
                     ),
                     "policy": policy.__dict__,
                     "policy_is_default": configured_policy is None,
-                    "aged_inbox_eligible": aged_inbox_allowed(
-                        policy,
-                        observation,
-                        imap_enabled=item.imap_enabled,
-                        pop3_enabled=item.pop3_enabled,
+                    "aged_inbox_eligible": (
+                        item.mailbox_id not in spam_sources
+                        and aged_inbox_allowed(
+                            policy,
+                            observation,
+                            imap_enabled=item.imap_enabled,
+                            pop3_enabled=item.pop3_enabled,
+                        )
                     ),
                     "dedicated_spam_source": item.mailbox_id in spam_sources,
                 }
@@ -132,9 +144,7 @@ class TrainerService:
         op, args = validate_request(request)
 
         if op == "health":
-            inventory_available = self.inventory_source is not None
-            if inventory_available and hasattr(self.inventory_source, "available"):
-                inventory_available = bool(self.inventory_source.available())
+            inventory_available = self._inventory_available()
             return {
                 "ok": True,
                 "service": "ispconfig-rspamd-trainer",
@@ -142,6 +152,10 @@ class TrainerService:
                 "rspamd": self.rspamd is not None,
                 "coordinator": self.coordinator is not None,
                 "observer": self._observer_available(),
+                "async_run": (
+                    self.async_launcher is not None
+                    and self.async_launcher.available()
+                ),
                 "dependency_errors": dict(self.dependency_errors),
             }
 
@@ -156,10 +170,14 @@ class TrainerService:
                 ),
                 "latest_run": self.state.latest_run(),
                 "dependencies": {
-                    "inventory_source": self.inventory_source is not None,
+                    "inventory_source": self._inventory_available(),
                     "rspamd": self.rspamd is not None,
                     "coordinator": self.coordinator is not None,
                     "observer": self._observer_available(),
+                    "async_run": (
+                        self.async_launcher is not None
+                        and self.async_launcher.available()
+                    ),
                 },
                 "dependency_errors": dict(self.dependency_errors),
             }
@@ -178,6 +196,8 @@ class TrainerService:
                 age_days=int(args["age_days"]),
                 batch_size=int(args["batch_size"]),
             ).validate()
+            if self.state.get_inventory(policy.mailbox_id) is None:
+                raise ValueError("cannot set policy for unknown mailbox")
             self.state.set_policy(policy)
             return {"policy": policy.__dict__}
 
@@ -219,5 +239,9 @@ class TrainerService:
 
         if op == "run":
             return self._run(dry_run=False)
+
+        if op == "run_async":
+            launcher = self._require(self.async_launcher, "async run launcher")
+            return launcher.start()
 
         raise AssertionError("unreachable")

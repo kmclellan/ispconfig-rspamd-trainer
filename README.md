@@ -125,6 +125,25 @@ live in the protected `rspamd.ini`, not in Sieve or shell scripts.
 These files are present and tested as source, but activation remains disabled
 until the Debian 13 target's Dovecot 2.4 configuration is validated.
 
+## ISPConfig management page
+
+The additive, admin-only **Rspamd Training** page now provides:
+
+- overall dependency/health state;
+- mailbox inventory, protocol capability and observed IMAP/POP3 use;
+- effective Safe Auto eligibility;
+- per-mailbox Automatic / explicit IMAP / POP3-mixed / Off policy;
+- Inbox age and batch-size controls;
+- explicit administrator confirmation before a mailbox becomes a retained
+  trusted spam source;
+- inventory refresh and privacy-safe dry-run;
+- asynchronous **Run now**, so the ISPConfig web request does not wait for the
+  entire training batch;
+- latest aggregate run status.
+
+Every mutation uses ISPConfig's own CSRF mechanism. PHP talks only to the
+restricted local broker; it does not query the ISPConfig database, execute
+shell commands, invoke `rspamc`, or manipulate mailboxes.
 
 ## Development
 

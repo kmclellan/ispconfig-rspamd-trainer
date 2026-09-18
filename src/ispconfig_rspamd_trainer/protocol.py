@@ -13,6 +13,7 @@ ALLOWED_OPERATIONS = {
     "classifier_stats": frozenset(),
     "dry_run": frozenset(),
     "run": frozenset(),
+    "run_async": frozenset(),
 }
 
 

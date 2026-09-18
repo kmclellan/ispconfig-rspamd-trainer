@@ -48,6 +48,19 @@ class FakeCoordinator:
         return FakeSummary(dry_run)
 
 
+class FakeLauncher:
+    def __init__(self, available=True):
+        self._available = available
+        self.started = 0
+
+    def available(self):
+        return self._available
+
+    def start(self):
+        self.started += 1
+        return {"started": True, "pid": 1234}
+
+
 class ProtocolTests(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
@@ -67,6 +80,9 @@ class ProtocolTests(unittest.TestCase):
             self.service.handle({"op": "health", "args": {"command": "id"}})
 
     def test_policy_set_and_get(self):
+        self.store.reconcile_inventory(
+            [MailboxRecord(5, "policy@example.test", 1, True, False)]
+        )
         response = self.service.handle({
             "op": "policy_set",
             "args": {"mailbox_id": 5, "mode": "auto", "age_days": 30, "batch_size": 100},
@@ -74,6 +90,18 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(5, response["policy"]["mailbox_id"])
         got = self.service.handle({"op": "policy_get", "args": {"mailbox_id": 5}})
         self.assertEqual("auto", got["policy"]["mode"])
+
+    def test_policy_rejects_unknown_mailbox(self):
+        with self.assertRaises(ValueError):
+            self.service.handle({
+                "op": "policy_set",
+                "args": {
+                    "mailbox_id": 500,
+                    "mode": "auto",
+                    "age_days": 30,
+                    "batch_size": 100,
+                },
+            })
 
     def test_discovery_reconciles_synthetic_inventory(self):
         service = TrainerService(self.store, inventory_source=FakeInventorySource())
@@ -121,6 +149,19 @@ class ProtocolTests(unittest.TestCase):
         self.assertTrue(by_id[1]["aged_inbox_eligible"])
         self.assertEqual("unknown", by_id[2]["observed_access"])
         self.assertFalse(by_id[2]["aged_inbox_eligible"])
+
+    def test_async_run_uses_fixed_launcher(self):
+        launcher = FakeLauncher()
+        service = TrainerService(self.store, async_launcher=launcher)
+        result = service.handle({"op": "run_async", "args": {}})
+        self.assertTrue(result["started"])
+        self.assertEqual(1, launcher.started)
+
+    def test_health_reports_async_launcher_availability(self):
+        launcher = FakeLauncher(available=False)
+        service = TrainerService(self.store, async_launcher=launcher)
+        result = service.handle({"op": "health", "args": {}})
+        self.assertFalse(result["async_run"])
 
     def test_spam_source_must_reference_known_mailbox(self):
         with self.assertRaises(ValueError):

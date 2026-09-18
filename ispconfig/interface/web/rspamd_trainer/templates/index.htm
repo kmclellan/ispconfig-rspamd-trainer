@@ -1,18 +1,139 @@
+<div class="page-header">
+  <h1>{tmpl_var name='page_title_txt'}</h1>
+</div>
+
+<tmpl_if name="error">
+  <div id="errorMsg" class="alert alert-danger">{tmpl_var name="error"}</div>
+</tmpl_if>
+<tmpl_if name="msg">
+  <div id="OKMsg" class="alert alert-success">{tmpl_var name="msg"}</div>
+</tmpl_if>
+
 <div class="panel panel_rspamd_trainer">
   <div class="pnl_formsarea">
-    <h2>Rspamd Training</h2>
-    <p class="fieldset-legend">Pre-alpha management module</p>
-    <div class="form-group">
-      <label class="col-sm-3 control-label">Local broker</label>
-      <div class="col-sm-9">
-        <p class="form-control-static">{tmpl_var name='broker_ok'} — {tmpl_var name='broker_message'}</p>
-      </div>
+    <div class="alert alert-{tmpl_var name='overall_class'}">
+      <strong>{tmpl_var name='overall_state'}</strong>
+      — {tmpl_var name='privacy_summary_txt'}
     </div>
-    <div class="form-group">
-      <label class="col-sm-3 control-label">Configured policies</label>
-      <div class="col-sm-9"><p class="form-control-static">{tmpl_var name='policy_count'}</p></div>
+
+    <p class="fieldset-legend">{tmpl_var name='status_txt'}</p>
+    <div class="table-wrapper">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>{tmpl_var name='broker_txt'}</th><td>{tmpl_var name='broker_state'}</td>
+            <th>{tmpl_var name='inventory_txt'}</th><td>{tmpl_var name='inventory_state'}</td>
+            <th>{tmpl_var name='rspamd_txt'}</th><td>{tmpl_var name='rspamd_state'}</td>
+          </tr>
+          <tr>
+            <th>{tmpl_var name='observer_txt'}</th><td>{tmpl_var name='observer_state'}</td>
+            <th>{tmpl_var name='classifier_txt'}</th><td>{tmpl_var name='classifier_state'}</td>
+            <th>{tmpl_var name='latest_run_txt'}</th><td>{tmpl_var name='latest_run'}</td>
+          </tr>
+          <tr>
+            <th>{tmpl_var name='mailboxes_txt'}</th><td>{tmpl_var name='mailbox_count'}</td>
+            <th>{tmpl_var name='custom_policies_txt'}</th><td>{tmpl_var name='policy_count'}</td>
+            <th>{tmpl_var name='spam_sources_txt'}</th><td>{tmpl_var name='spam_source_count'}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <p>This early module intentionally exposes status only. Policy editing,
-    discovery and Recommended Setup will be added after target integration tests.</p>
+
+    <div class="form-group marginTop15">
+      <button type="button" class="btn btn-default formbutton-default"
+        data-submit-form="pageForm"
+        data-form-action="rspamd_trainer/index.php?action=refresh">{tmpl_var name='refresh_txt'}</button>
+      <button type="button" class="btn btn-default formbutton-default"
+        data-submit-form="pageForm"
+        data-form-action="rspamd_trainer/index.php?action=dry_run">{tmpl_var name='dry_run_txt'}</button>
+      <button type="button" class="btn btn-default formbutton-success"{tmpl_var name='run_disabled'}
+        data-submit-form="pageForm"
+        data-form-action="rspamd_trainer/index.php?action=run">{tmpl_var name='run_now_txt'}</button>
+    </div>
+
+    <p class="fieldset-legend">{tmpl_var name='mailbox_policies_txt'}</p>
+    <p>{tmpl_var name='mailbox_help_txt'}</p>
+
+    <div class="table-wrapper marginTop15">
+      <table class="table">
+        <thead class="dark form-group-sm">
+          <tr>
+            <th>{tmpl_var name='mailbox_txt'}</th>
+            <th>{tmpl_var name='access_txt'}</th>
+            <th>{tmpl_var name='observed_txt'}</th>
+            <th>{tmpl_var name='mode_txt'}</th>
+            <th>{tmpl_var name='age_txt'}</th>
+            <th>{tmpl_var name='batch_txt'}</th>
+            <th>{tmpl_var name='eligible_txt'}</th>
+            <th>{tmpl_var name='spam_source_txt'}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tmpl_loop name="records">
+            <tr>
+              <td>{tmpl_var name='email'}</td>
+              <td>{tmpl_var name='access_mode'}</td>
+              <td>{tmpl_var name='observed_access'}</td>
+              <td>
+                <select class="form-control" name="mode_{tmpl_var name='id'}">
+                  {tmpl_var name='mode_options'}
+                </select>
+                <tmpl_if name="policy_is_default">
+                  <small>{tmpl_var name='default_policy_txt'}</small>
+                </tmpl_if>
+              </td>
+              <td>
+                <input class="form-control" style="min-width:75px" type="number"
+                  min="30" max="3650" name="age_days_{tmpl_var name='id'}"
+                  value="{tmpl_var name='age_days'}" />
+              </td>
+              <td>
+                <input class="form-control" style="min-width:75px" type="number"
+                  min="1" max="1000" name="batch_size_{tmpl_var name='id'}"
+                  value="{tmpl_var name='batch_size'}" />
+              </td>
+              <td>{tmpl_var name='eligible_txt'}</td>
+              <td>
+                <tmpl_if name="dedicated_spam_source">
+                  <strong>{tmpl_var name='yes_txt'}</strong><br />
+                  <button type="button" class="btn btn-default formbutton-danger formbutton-narrow"
+                    data-submit-form="pageForm"
+                    data-form-action="rspamd_trainer/index.php?action=spam_disable&id={tmpl_var name='id'}">
+                    {tmpl_var name='disable_txt'}
+                  </button>
+                <tmpl_else>
+                  {tmpl_var name='no_txt'}<br />
+                  <label style="font-weight:normal">
+                    <input type="checkbox" name="confirm_spam_{tmpl_var name='id'}" value="yes" />
+                    {tmpl_var name='confirm_spam_txt'}
+                  </label><br />
+                  <button type="button" class="btn btn-default formbutton-warning formbutton-narrow"
+                    data-submit-form="pageForm"
+                    data-form-action="rspamd_trainer/index.php?action=spam_enable&id={tmpl_var name='id'}">
+                    {tmpl_var name='enable_txt'}
+                  </button>
+                </tmpl_if>
+              </td>
+              <td class="text-right">
+                <button type="button" class="btn btn-default formbutton-success formbutton-narrow"
+                  data-submit-form="pageForm"
+                  data-form-action="rspamd_trainer/index.php?action=policy_save&id={tmpl_var name='id'}">
+                  {tmpl_var name='save_txt'}
+                </button>
+              </td>
+            </tr>
+          </tmpl_loop>
+          <tmpl_unless name="records">
+            <tr><td colspan="9">{tmpl_var name='no_mailboxes_txt'}</td></tr>
+          </tmpl_unless>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-info marginTop15">
+      <strong>{tmpl_var name='privacy_txt'}:</strong>
+      {tmpl_var name='privacy_detail_txt'}
+    </div>
   </div>
 </div>

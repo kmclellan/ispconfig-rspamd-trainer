@@ -23,3 +23,6 @@
 - Added narrow root-only ISPConfig mailbox snapshot exporter plus hardened 15-minute discovery timer design, keeping ISPConfig database credentials out of the trainer.
 - Added separate low-privilege IMAP/POP3 observation socket and fail-open Dovecot post-login wrappers that record only mailbox identity, protocol and timestamp.
 - Enriched mailbox inventory status with observed protocol usage, effective policy, aged-Inbox eligibility and dedicated-spam-source state.
+- Replaced the status-only ISPConfig page with an admin-only management dashboard for health, inventory refresh, dry-run, asynchronous run-now, per-mailbox policy and explicit trusted-spam-source confirmation.
+- Added ISPConfig-native CSRF protection for all UI mutations and static regression checks forbidding shell/database access from the PHP module.
+- Added a fixed asynchronous trainer launcher and multi-worker broker so status/policy requests remain responsive while a scheduled run is active.
