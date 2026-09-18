@@ -26,6 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sh -n install.sh uninstall.sh
+      - name: Stage installation payload twice
+        run: |
+          root="$RUNNER_TEMP/ispconfig-rspamd-trainer-root"
+          ./install.sh --stage "$root"
+          sha256sum "$root/usr/share/doc/ispconfig-rspamd-trainer/install-manifest.json" > "$RUNNER_TEMP/manifest-1"
+          ./install.sh --stage "$root"
+          sha256sum "$root/usr/share/doc/ispconfig-rspamd-trainer/install-manifest.json" > "$RUNNER_TEMP/manifest-2"
+          cmp "$RUNNER_TEMP/manifest-1" "$RUNNER_TEMP/manifest-2"
+          test -z "$(find "$root" \( -name '*.bak.*' -o -name '__pycache__' -o -name '*.pyc' \) -print -quit)"
+          test ! -d "$root/etc/dovecot/conf.d"
       - name: PHP and ISPConfig language syntax
         run: find ispconfig bin \( -name '*.php' -o -name '*.lng' \) -print0 | xargs -0 -n1 php -l
       - name: Install Dovecot Sieve compiler

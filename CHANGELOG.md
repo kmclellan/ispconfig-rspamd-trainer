@@ -26,3 +26,5 @@
 - Replaced the status-only ISPConfig page with an admin-only management dashboard for health, inventory refresh, dry-run, asynchronous run-now, per-mailbox policy and explicit trusted-spam-source confirmation.
 - Added ISPConfig-native CSRF protection for all UI mutations and static regression checks forbidding shell/database access from the PHP module.
 - Added a fixed asynchronous trainer launcher and multi-worker broker so status/policy requests remain responsive while a scheduled run is active.
+- Added safe, repeatable `install.sh --stage` packaging with fixed runtime wrappers, no pip/venv production dependency, development-artifact filtering, and a project-owned SHA-256/mode install manifest.
+- Added staged-install CI/idempotence tests while keeping live production activation disabled pending Debian 13 integration.

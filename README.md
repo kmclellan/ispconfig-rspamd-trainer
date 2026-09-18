@@ -180,14 +180,25 @@ The intended production path is eventually:
 sudo ./install.sh
 ```
 
-For now only the non-mutating preflight is enabled:
+For now the non-mutating target preflight is enabled:
 
 ```sh
 sudo ./install.sh --check
 ```
 
-The mutating path intentionally refuses to run until Debian 13 / ISPConfig
-3.3.x integration testing is complete.
+The complete install payload can also be staged safely without root:
+
+```sh
+./install.sh --stage /tmp/ispconfig-rspamd-trainer-root
+```
+
+Staging is deterministic, excludes development artefacts, does not activate
+Dovecot service snippets, and writes a project-owned file/hash/mode manifest
+for future upgrade/uninstall safety.
+
+The mutating live-install path intentionally refuses to run until Debian 13 /
+ISPConfig 3.3.x / Dovecot 2.4 integration testing is complete. See
+`docs/INSTALL.md`.
 
 ## Licence
 

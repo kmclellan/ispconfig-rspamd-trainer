@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+export PYTHONPATH=/usr/local/lib/ispconfig-rspamd-trainer
+exec /usr/bin/python3 -m ispconfig_rspamd_trainer.broker "$@"
