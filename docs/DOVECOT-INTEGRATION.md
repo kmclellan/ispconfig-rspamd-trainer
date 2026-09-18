@@ -8,9 +8,41 @@ Current Dovecot 2.4 supports:
 - `doveadm search` to obtain mailbox GUIDs and UIDs;
 - `doveadm fetch` to retrieve message text;
 - `doveadm move` to move selected messages to a training archive;
-- `doveadm expunge` to remove selected messages.
+- `doveadm expunge` to remove selected messages;
+- `-S socket_path` to execute mail commands through a doveadm service
+  socket.
 
 This keeps Dovecot indexes/mailbox semantics authoritative.
+
+## Dedicated doveadm socket
+
+The trainer should **not** be added to the `vmail` group merely to get direct
+Maildir access, and it should not need read permission on Dovecot's protected
+configuration.
+
+The intended Dovecot 2.4 design is the project-specific Unix listener in
+`dovecot/2.4/97-ispconfig-rspamd-doveadm.conf.example`:
+
+- socket name: `/run/dovecot/ispconfig-rspamd-trainer-doveadm`;
+- owner remains Dovecot/root;
+- group: `ispconfig-rspamd-trainer`;
+- mode: `0660`.
+
+The Python client invokes `doveadm -O ... -S <socket>`. `-O` prevents the
+unprivileged client process from reading the local Dovecot configuration;
+mail/userdb operations are delegated through the restricted local doveadm
+service socket.
+
+Access to this listener is privileged mail administration and therefore must
+be limited to the trainer service account/group. The ISPConfig UI group and
+Dovecot login users do not receive access.
+
+A read-only source-server experiment confirmed why this is useful: ordinary
+non-root `doveadm -u` failed while reading protected Dovecot certificate
+configuration; adding `-O -S /run/dovecot/doveadm-server` bypassed that
+configuration read and reached the existing socket, where it then failed only
+because that production socket is correctly root-only. No production Dovecot
+permissions were changed.
 
 ## Immediate IMAPSieve feedback
 

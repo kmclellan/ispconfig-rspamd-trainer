@@ -37,6 +37,7 @@ class InstallLayoutTests(unittest.TestCase):
                 "usr/local/bin/ispconfig-rspamd-feedback",
                 "usr/local/bin/ispconfig-rspamd-trainer-observer",
                 "usr/local/bin/ispconfig-rspamd-observe",
+                "usr/local/bin/ispconfig-rspamd-lifecycle",
                 "usr/local/lib/ispconfig-rspamd-trainer/ispconfig_rspamd_trainer/broker.py",
                 "usr/local/ispconfig/interface/web/rspamd_trainer/index.php",
                 "usr/local/libexec/ispconfig-rspamd-trainer/export_mailboxes.php",
@@ -57,6 +58,9 @@ class InstallLayoutTests(unittest.TestCase):
             examples = (
                 target
                 / "usr/share/doc/ispconfig-rspamd-trainer/examples/dovecot-2.4"
+            )
+            self.assertTrue(
+                (examples / "97-ispconfig-rspamd-doveadm.conf.example").is_file()
             )
             self.assertTrue(
                 (examples / "98-ispconfig-rspamd-observer.conf.example").is_file()

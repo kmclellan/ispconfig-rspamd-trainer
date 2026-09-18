@@ -55,8 +55,43 @@ The manifest contains only project-owned files, with path, mode, and SHA-256.
 It deliberately does not scan or claim unrelated files that happen to be
 present in the staging root.
 
-This manifest is intended to support safe upgrade verification and
+This manifest is the basis for safe upgrade verification and
 manifest-driven uninstall. The manifest itself is not listed inside itself.
+
+## Upgrade and uninstall lifecycle
+
+A staged payload now includes `ispconfig-rspamd-lifecycle`. The lifecycle
+engine verifies manifest ownership before any removal or replacement.
+
+It distinguishes:
+
+- unchanged owned files;
+- locally modified owned files, including permission-mode drift;
+- already-missing files;
+- files added/changed/retired by a candidate release;
+- collisions where a candidate project path is already occupied locally.
+
+Manifest paths are constrained to the project's known installation locations;
+a forged manifest cannot claim arbitrary paths such as `/etc/passwd`.
+
+For development/testing, `uninstall.sh` supports only disposable staged
+roots:
+
+```sh
+./uninstall.sh --stage-root /tmp/ispconfig-rspamd-trainer-root --plan
+./uninstall.sh --stage-root /tmp/ispconfig-rspamd-trainer-root --apply
+```
+
+Default staged uninstall refuses to proceed if any owned file has been locally
+modified, preserving both that file and the manifest for inspection. An
+explicit `--allow-modified` override exists only for deliberate destructive
+testing.
+
+Live-root uninstall remains disabled.
+
+State and administrator-created configuration are outside the install
+manifest, so the future production uninstall can preserve them independently
+from package-owned files.
 
 ## Important activation boundary
 

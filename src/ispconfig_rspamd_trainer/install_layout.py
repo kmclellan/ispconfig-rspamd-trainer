@@ -138,6 +138,7 @@ def stage_repository(root, source_root):
         "ispconfig-rspamd-feedback",
         "ispconfig-rspamd-trainer-observer",
         "ispconfig-rspamd-observe",
+        "ispconfig-rspamd-lifecycle",
     )
     for name in wrapper_names:
         source = source_root / "packaging/wrappers" / name

@@ -36,6 +36,12 @@ jobs:
           cmp "$RUNNER_TEMP/manifest-1" "$RUNNER_TEMP/manifest-2"
           test -z "$(find "$root" \( -name '*.bak.*' -o -name '__pycache__' -o -name '*.pyc' \) -print -quit)"
           test ! -d "$root/etc/dovecot/conf.d"
+          mkdir -p "$root/opt"
+          printf 'keep\n' > "$root/opt/unrelated.txt"
+          ./uninstall.sh --stage-root "$root" --plan > "$RUNNER_TEMP/uninstall-plan.json"
+          ./uninstall.sh --stage-root "$root" --apply > "$RUNNER_TEMP/uninstall-apply.json"
+          test "$(cat "$root/opt/unrelated.txt")" = keep
+          test ! -e "$root/usr/local/bin/ispconfig-rspamd-trainer"
       - name: PHP and ISPConfig language syntax
         run: find ispconfig bin \( -name '*.php' -o -name '*.lng' \) -print0 | xargs -0 -n1 php -l
       - name: Install Dovecot Sieve compiler

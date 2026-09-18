@@ -28,3 +28,5 @@
 - Added a fixed asynchronous trainer launcher and multi-worker broker so status/policy requests remain responsive while a scheduled run is active.
 - Added safe, repeatable `install.sh --stage` packaging with fixed runtime wrappers, no pip/venv production dependency, development-artifact filtering, and a project-owned SHA-256/mode install manifest.
 - Added staged-install CI/idempotence tests while keeping live production activation disabled pending Debian 13 integration.
+- Added manifest-driven staged uninstall/upgrade planning with modified-file, permission-drift, collision, missing-file and malicious-path protection; live-root mutation remains disabled.
+- Added a dedicated Dovecot doveadm Unix-socket design and `doveadm -O ... -S` client support so the trainer does not need `vmail` filesystem membership or read access to protected Dovecot configuration.

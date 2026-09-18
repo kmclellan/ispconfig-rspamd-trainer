@@ -1,5 +1,6 @@
 import json
 import subprocess
+from pathlib import Path
 
 
 class DovecotError(RuntimeError):
@@ -22,15 +23,48 @@ def _validate_token(value, name, max_len=255):
     return value
 
 
+def _validate_socket_path(value):
+    if value is None:
+        return None
+    value = _validate_token(value, "doveadm socket", max_len=4096)
+    if not Path(value).is_absolute():
+        raise ValueError("doveadm socket must be an absolute path")
+    return value
+
+
 class DoveadmClient:
-    def __init__(self, binary="doveadm", timeout=60, runner=None):
+    def __init__(
+        self,
+        binary="doveadm",
+        timeout=60,
+        runner=None,
+        server_socket=None,
+    ):
         self.binary = binary
         self.timeout = timeout
         self.runner = runner or subprocess.run
+        self.server_socket = _validate_socket_path(server_socket)
+
+    def _argv(self, args, json_output=False):
+        args = list(args)
+        if not args:
+            raise ValueError("doveadm command is required")
+        argv = [self.binary]
+        if self.server_socket:
+            # -O prevents the unprivileged client process from reading the
+            # local Dovecot configuration. Mail/userdb operations are executed
+            # by the privileged doveadm service reached through -S.
+            argv.append("-O")
+        if json_output:
+            argv.extend(["-f", "json"])
+        if self.server_socket:
+            args = [args[0], "-S", self.server_socket] + args[1:]
+        argv.extend(args)
+        return argv
 
     def _run_json(self, args):
         proc = self.runner(
-            [self.binary, "-f", "json"] + list(args),
+            self._argv(args, json_output=True),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=self.timeout,
@@ -48,7 +82,7 @@ class DoveadmClient:
 
     def _run(self, args):
         proc = self.runner(
-            [self.binary] + list(args),
+            self._argv(args),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=self.timeout,

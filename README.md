@@ -194,7 +194,9 @@ The complete install payload can also be staged safely without root:
 
 Staging is deterministic, excludes development artefacts, does not activate
 Dovecot service snippets, and writes a project-owned file/hash/mode manifest
-for future upgrade/uninstall safety.
+for upgrade/uninstall safety. A staged lifecycle tool can verify ownership,
+plan upgrades, and test uninstall without touching a live root; locally
+modified owned files block default removal.
 
 The mutating live-install path intentionally refuses to run until Debian 13 /
 ISPConfig 3.3.x / Dovecot 2.4 integration testing is complete. See

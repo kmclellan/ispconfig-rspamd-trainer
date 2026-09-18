@@ -37,6 +37,62 @@ class DovecotTests(unittest.TestCase):
             runner.calls[0][0],
         )
 
+    def test_dedicated_server_socket_uses_no_config_and_fixed_socket(self):
+        output = json.dumps([{"mailbox-guid": "abc123", "uid": "42"}]).encode()
+        runner = Recorder([Result(stdout=output)])
+        client = DoveadmClient(
+            runner=runner,
+            server_socket="/run/dovecot/ispconfig-rspamd-trainer-doveadm",
+        )
+        client.search_aged_inbox("user@example.test", 30)
+        self.assertEqual(
+            [
+                "doveadm",
+                "-O",
+                "-f",
+                "json",
+                "search",
+                "-S",
+                "/run/dovecot/ispconfig-rspamd-trainer-doveadm",
+                "-u",
+                "user@example.test",
+                "mailbox",
+                "INBOX",
+                "savedbefore",
+                "30d",
+            ],
+            runner.calls[0][0],
+        )
+
+    def test_dedicated_socket_applies_to_mutating_command(self):
+        runner = Recorder([Result()])
+        client = DoveadmClient(
+            runner=runner,
+            server_socket="/run/dovecot/ispconfig-rspamd-trainer-doveadm",
+        )
+        client.move_uid("user@example.test", "Trained", "abc", 9)
+        self.assertEqual(
+            [
+                "doveadm",
+                "-O",
+                "move",
+                "-S",
+                "/run/dovecot/ispconfig-rspamd-trainer-doveadm",
+                "-u",
+                "user@example.test",
+                "Trained",
+                "mailbox-guid",
+                "abc",
+                "uid",
+                "9",
+            ],
+            runner.calls[0][0],
+        )
+
+    def test_relative_server_socket_is_rejected(self):
+        with self.assertRaises(ValueError):
+            DoveadmClient(server_socket="doveadm.sock")
+
     def test_fetch_returns_message_bytes(self):
         runner = Recorder([Result(stdout=json.dumps([{"text": "Subject: x\n\nbody"}]).encode())])
         client = DoveadmClient(runner=runner)

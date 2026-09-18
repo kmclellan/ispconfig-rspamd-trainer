@@ -1,0 +1,16 @@
+# Dedicated local doveadm administration socket for the trainer.
+#
+# Dovecot 2.4 mail commands support -S socket_path. Unix-socket clients are
+# preauthenticated by the doveadm service, so access to this socket is
+# intentionally equivalent to privileged mail administration.
+#
+# The socket is therefore restricted to the dedicated trainer group only.
+# The ISPConfig panel/UI group and the Dovecot login group must not receive
+# access to this listener.
+
+service doveadm {
+  unix_listener ispconfig-rspamd-trainer-doveadm {
+    group = ispconfig-rspamd-trainer
+    mode = 0660
+  }
+}

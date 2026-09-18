@@ -17,6 +17,7 @@ DEFAULT_STATE = "/var/lib/ispconfig-rspamd-trainer/state.db"
 DEFAULT_SNAPSHOT = "/var/lib/ispconfig-rspamd-trainer/mailboxes.json"
 DEFAULT_RSPAMD_CONFIG = "/etc/ispconfig-rspamd-trainer/rspamd.ini"
 DEFAULT_DOVEADM = "/usr/bin/doveadm"
+DEFAULT_DOVEADM_SOCKET = "/run/dovecot/ispconfig-rspamd-trainer-doveadm"
 DEFAULT_OBSERVER_SOCKET = "/run/ispconfig-rspamd-trainer/observe.sock"
 DEFAULT_CLI = "/usr/local/bin/ispconfig-rspamd-trainer"
 MAX_REQUEST = 65536
@@ -46,6 +47,7 @@ def build_service(
     snapshot_path=DEFAULT_SNAPSHOT,
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
+    doveadm_socket=DEFAULT_DOVEADM_SOCKET,
     observer_socket_path=DEFAULT_OBSERVER_SOCKET,
     management_socket_path=DEFAULT_SOCKET,
     cli_binary=DEFAULT_CLI,
@@ -69,10 +71,16 @@ def build_service(
 
     dovecot = None
     path = Path(doveadm_binary)
-    if path.is_file() and os.access(str(path), os.X_OK):
-        dovecot = DoveadmClient(binary=str(path))
-    else:
+    socket_path = Path(doveadm_socket)
+    if not path.is_file() or not os.access(str(path), os.X_OK):
         dependency_errors["doveadm"] = "binary unavailable"
+    elif not socket_path.is_socket():
+        dependency_errors["doveadm"] = "dedicated socket unavailable"
+    else:
+        dovecot = DoveadmClient(
+            binary=str(path),
+            server_socket=str(socket_path),
+        )
 
     coordinator = None
     if rspamd is not None and dovecot is not None:
@@ -120,6 +128,7 @@ def serve(
     snapshot_path=DEFAULT_SNAPSHOT,
     rspamd_config=DEFAULT_RSPAMD_CONFIG,
     doveadm_binary=DEFAULT_DOVEADM,
+    doveadm_socket=DEFAULT_DOVEADM_SOCKET,
     observer_socket_path=DEFAULT_OBSERVER_SOCKET,
     cli_binary=DEFAULT_CLI,
 ):
@@ -128,6 +137,7 @@ def serve(
         snapshot_path=snapshot_path,
         rspamd_config=rspamd_config,
         doveadm_binary=doveadm_binary,
+        doveadm_socket=doveadm_socket,
         observer_socket_path=observer_socket_path,
         management_socket_path=socket_path,
         cli_binary=cli_binary,
@@ -149,6 +159,9 @@ def main():
         snapshot_path=os.environ.get("ISPCRT_SNAPSHOT", DEFAULT_SNAPSHOT),
         rspamd_config=os.environ.get("ISPCRT_RSPAMD_CONFIG", DEFAULT_RSPAMD_CONFIG),
         doveadm_binary=os.environ.get("ISPCRT_DOVEADM", DEFAULT_DOVEADM),
+        doveadm_socket=os.environ.get(
+            "ISPCRT_DOVEADM_SOCKET", DEFAULT_DOVEADM_SOCKET
+        ),
         observer_socket_path=os.environ.get(
             "ISPCRT_OBSERVER_SOCKET", DEFAULT_OBSERVER_SOCKET
         ),
