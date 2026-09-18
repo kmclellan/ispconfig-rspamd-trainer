@@ -98,6 +98,35 @@ class RspamdClientTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             client.learn_ham(b"ham", deliver_to="user@example.test\nPassword: bad")
 
+    def test_stat_uses_json_controller_command(self):
+        recorder = Recorder(Result(stdout=b'{"scanned": 123, "learned": 9}'))
+        client = RspamdClient(
+            binary="/usr/bin/rspamc",
+            connection=RspamdConnection(
+                endpoint="/run/rspamd/worker-controller.socket",
+                password_file="/etc/example/controller.password",
+            ),
+            runner=recorder,
+        )
+        self.assertEqual({"scanned": 123, "learned": 9}, client.stat())
+        self.assertEqual(
+            [
+                "/usr/bin/rspamc",
+                "-h",
+                "/run/rspamd/worker-controller.socket",
+                "-P",
+                "/etc/example/controller.password",
+                "-j",
+                "stat",
+            ],
+            recorder.calls[0][0],
+        )
+
+    def test_stat_rejects_invalid_json(self):
+        client = RspamdClient(runner=Recorder(Result(stdout=b"not-json")))
+        with self.assertRaises(Exception):
+            client.stat()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,11 @@ ALLOWED_OPERATIONS = {
     "policy_list": frozenset(),
     "policy_get": frozenset({"mailbox_id"}),
     "policy_set": frozenset({"mailbox_id", "mode", "age_days", "batch_size"}),
+    "inventory_list": frozenset(),
+    "spam_source_list": frozenset(),
+    "spam_source_set": frozenset(
+        {"mailbox_id", "enabled", "archive_mailbox", "ham_mailbox"}
+    ),
     "discovery": frozenset(),
     "classifier_stats": frozenset(),
     "dry_run": frozenset(),

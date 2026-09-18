@@ -47,11 +47,20 @@ def aged_inbox_allowed(
     now=None,
     pop3_lookback_days=DEFAULT_POP3_LOOKBACK_DAYS,
     auto_warmup_days=DEFAULT_AUTO_WARMUP_DAYS,
+    imap_enabled=True,
+    pop3_enabled=True,
 ):
     policy.validate()
     if policy.mode in {"off", "mixed"}:
         return False
+    if not imap_enabled:
+        return False
     if policy.mode == "imap":
+        return True
+
+    # ISPConfig can explicitly disable POP3 for a mailbox. That is stronger
+    # evidence than waiting to observe the absence of POP3 activity.
+    if not pop3_enabled:
         return True
 
     now = now or datetime.now(timezone.utc)
@@ -59,7 +68,8 @@ def aged_inbox_allowed(
     _aware(observation.last_imap, "last_imap")
     _aware(observation.last_pop3, "last_pop3")
 
-    # Auto mode needs evidence, not merely an absence of observed POP3.
+    # Auto mode with POP3 allowed needs positive observation evidence, not
+    # merely an absence of observed POP3 on a fresh installation.
     if observation.observed_since is None or observation.last_imap is None:
         return False
     if observation.observed_since > now - timedelta(days=auto_warmup_days):

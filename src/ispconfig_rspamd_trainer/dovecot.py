@@ -58,21 +58,35 @@ class DoveadmClient:
             raise DovecotError("doveadm failed with return code {}".format(proc.returncode))
         return proc.stdout
 
-    def search_aged_inbox(self, user, age_days):
+    def search_mailbox(self, user, mailbox, savedbefore_days=None):
         user = _validate_user(user)
-        if not isinstance(age_days, int) or age_days < 30 or age_days > 3650:
-            raise ValueError("age_days outside safe range")
-        rows = self._run_json(
-            ["search", "-u", user, "mailbox", "INBOX", "savedbefore", "{}d".format(age_days)]
-        )
+        mailbox = _validate_token(mailbox, "mailbox")
+        args = ["search", "-u", user, "mailbox", mailbox]
+        if savedbefore_days is not None:
+            if (
+                not isinstance(savedbefore_days, int)
+                or savedbefore_days < 1
+                or savedbefore_days > 3650
+            ):
+                raise ValueError("savedbefore_days outside safe range")
+            args.extend(["savedbefore", "{}d".format(savedbefore_days)])
+        rows = self._run_json(args)
         refs = []
         for row in rows:
             guid = row.get("mailbox-guid") or row.get("mailbox_guid")
             uid = row.get("uid")
             if guid is None or uid is None:
                 raise DovecotError("search result lacks mailbox-guid/uid")
-            refs.append((_validate_token(str(guid), "mailbox guid"), int(uid)))
+            uid = int(uid)
+            if uid <= 0:
+                raise DovecotError("search result has invalid uid")
+            refs.append((_validate_token(str(guid), "mailbox guid"), uid))
         return refs
+
+    def search_aged_inbox(self, user, age_days):
+        if not isinstance(age_days, int) or age_days < 30 or age_days > 3650:
+            raise ValueError("age_days outside safe range")
+        return self.search_mailbox(user, "INBOX", savedbefore_days=age_days)
 
     def fetch_text(self, user, mailbox_guid, uid):
         user = _validate_user(user)

@@ -1,3 +1,4 @@
+import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -5,6 +6,10 @@ from typing import Optional
 
 
 class RspamdLearningError(RuntimeError):
+    pass
+
+
+class RspamdControlError(RuntimeError):
     pass
 
 
@@ -81,20 +86,23 @@ class RspamdClient:
         self.connection = connection or RspamdConnection()
         self.runner = runner or subprocess.run
 
+    def _run(self, argv, input_bytes=None):
+        return self.runner(
+            argv,
+            input=input_bytes,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=self.timeout,
+            check=False,
+        )
+
     def _learn(self, command, kind, message, deliver_to=None):
         if not isinstance(message, (bytes, bytearray)):
             raise TypeError("message must be bytes")
         argv = [self.binary]
         argv.extend(self.connection.command_args(deliver_to=deliver_to))
         argv.append(command)
-        proc = self.runner(
-            argv,
-            input=bytes(message),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=self.timeout,
-            check=False,
-        )
+        proc = self._run(argv, input_bytes=bytes(message))
         response = proc.stdout.decode("utf-8", errors="replace").strip()
         if proc.returncode != 0:
             # Deliberately do not include message data, stderr, password-file
@@ -111,3 +119,20 @@ class RspamdClient:
 
     def learn_ham(self, message, deliver_to=None):
         return self._learn("learn_ham", "ham", message, deliver_to=deliver_to)
+
+    def stat(self):
+        argv = [self.binary]
+        argv.extend(self.connection.command_args())
+        argv.extend(["-j", "stat"])
+        proc = self._run(argv)
+        if proc.returncode != 0:
+            raise RspamdControlError(
+                "Rspamd stat failed with return code {}".format(proc.returncode)
+            )
+        try:
+            result = json.loads(proc.stdout.decode("utf-8"))
+        except Exception as exc:
+            raise RspamdControlError("Rspamd stat returned invalid JSON") from exc
+        if not isinstance(result, (dict, list)):
+            raise RspamdControlError("Rspamd stat returned unexpected JSON type")
+        return result

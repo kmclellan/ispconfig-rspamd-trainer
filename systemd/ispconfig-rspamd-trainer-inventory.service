@@ -1,0 +1,21 @@
+[Unit]
+Description=Refresh ISPConfig Rspamd Trainer mailbox inventory
+After=mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=oneshot
+User=root
+Group=ispconfig-rspamd-trainer
+ExecStart=/usr/bin/php /usr/local/libexec/ispconfig-rspamd-trainer/export_mailboxes.php /var/lib/ispconfig-rspamd-trainer/mailboxes.json
+StateDirectory=ispconfig-rspamd-trainer
+StateDirectoryMode=0750
+UMask=0027
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/ispconfig-rspamd-trainer
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
