@@ -20,9 +20,8 @@ def build_parser():
     parser = argparse.ArgumentParser(prog="ispconfig-rspamd-trainer")
     parser.add_argument("--socket", default=os.environ.get("ISPCRT_SOCKET", DEFAULT_SOCKET))
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("health")
-    sub.add_parser("status")
-    sub.add_parser("policies")
+    for command in ("health", "status", "policies", "discovery", "classifier-stats", "dry-run", "run"):
+        sub.add_parser(command)
     getp = sub.add_parser("policy-get")
     getp.add_argument("mailbox_id", type=int)
     setp = sub.add_parser("policy-set")
@@ -35,19 +34,31 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    if args.command == "health":
-        request = {"op": "health", "args": {}}
-    elif args.command == "status":
-        request = {"op": "status", "args": {}}
-    elif args.command == "policies":
-        request = {"op": "policy_list", "args": {}}
+    simple = {
+        "health": "health",
+        "status": "status",
+        "policies": "policy_list",
+        "discovery": "discovery",
+        "classifier-stats": "classifier_stats",
+        "dry-run": "dry_run",
+        "run": "run",
+    }
+    if args.command in simple:
+        request = {"op": simple[args.command], "args": {}}
     elif args.command == "policy-get":
         request = {"op": "policy_get", "args": {"mailbox_id": args.mailbox_id}}
     else:
         policy = MailboxPolicy(args.mailbox_id, args.mode, args.age_days, args.batch_size).validate()
         request = {"op": "policy_set", "args": policy.__dict__}
-    print(json.dumps(call_broker(request, args.socket), indent=2, sort_keys=True))
+    response = call_broker(request, args.socket)
+    print(json.dumps(response, indent=2, sort_keys=True))
+    if not response.get("ok"):
+        return 1
+    result = response.get("result")
+    if isinstance(result, dict) and result.get("implemented") is False:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
