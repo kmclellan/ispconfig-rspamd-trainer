@@ -1,0 +1,18 @@
+[Unit]
+Description=ISPConfig Rspamd Trainer broker
+Requires=ispconfig-rspamd-trainer-broker.socket
+After=local-fs.target
+
+[Service]
+Type=simple
+User=ispconfig-rspamd-trainer
+Group=ispconfig-rspamd-trainer
+ExecStart=/usr/local/bin/ispconfig-rspamd-trainer-broker
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/ispconfig-rspamd-trainer /run/ispconfig-rspamd-trainer
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes

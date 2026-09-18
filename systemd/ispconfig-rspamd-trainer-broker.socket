@@ -1,0 +1,13 @@
+[Unit]
+Description=ISPConfig Rspamd Trainer broker socket
+
+[Socket]
+ListenStream=/run/ispconfig-rspamd-trainer/broker.sock
+SocketUser=ispconfig-rspamd-trainer
+SocketGroup=ispconfig-rspamd-trainer-ui
+SocketMode=0660
+DirectoryMode=0750
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

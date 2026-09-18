@@ -1,0 +1,18 @@
+<div class="panel panel_rspamd_trainer">
+  <div class="pnl_formsarea">
+    <h2>Rspamd Training</h2>
+    <p class="fieldset-legend">Pre-alpha management module</p>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">Local broker</label>
+      <div class="col-sm-9">
+        <p class="form-control-static">{tmpl_var name='broker_ok'} — {tmpl_var name='broker_message'}</p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-3 control-label">Configured policies</label>
+      <div class="col-sm-9"><p class="form-control-static">{tmpl_var name='policy_count'}</p></div>
+    </div>
+    <p>This early module intentionally exposes status only. Policy editing,
+    discovery and Recommended Setup will be added after target integration tests.</p>
+  </div>
+</div>

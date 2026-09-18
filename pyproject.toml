@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ispconfig-rspamd-trainer"
+version = "0.1.0.dev0"
+description = "Privacy-aware automatic Rspamd training for ISPConfig mail servers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Kelly McLellan"}]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Communications :: Email :: Filters",
+  "Topic :: System :: Systems Administration",
+]
+
+[project.scripts]
+ispconfig-rspamd-trainer = "ispconfig_rspamd_trainer.cli:main"
+ispconfig-rspamd-trainer-broker = "ispconfig_rspamd_trainer.broker:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

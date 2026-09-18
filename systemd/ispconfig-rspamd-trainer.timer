@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ISPConfig Rspamd Trainer periodically
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=30min
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=ISPConfig Rspamd mailbox training run
+After=rspamd.service redis-server.service dovecot.service
+Wants=rspamd.service redis-server.service dovecot.service
+
+[Service]
+Type=oneshot
+User=ispconfig-rspamd-trainer
+Group=ispconfig-rspamd-trainer
+ExecStart=/usr/local/bin/ispconfig-rspamd-trainer status
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/ispconfig-rspamd-trainer
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
